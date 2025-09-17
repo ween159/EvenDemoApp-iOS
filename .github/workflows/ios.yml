@@ -1,0 +1,124 @@
+name: iOS Build and Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Analyze code
+      run: flutter analyze
+      
+    - name: Run tests
+      run: flutter test
+      
+    - name: Build iOS (no code signing)
+      run: |
+        flutter build ios --release --no-codesign --no-tree-shake-icons
+        
+    - name: Create IPA directory
+      run: |
+        mkdir -p build/ios/iphoneos/Payload
+        cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
+        
+    - name: Create IPA file
+      run: |
+        cd build/ios/iphoneos
+        zip -r EvenDemoApp.ipa Payload/
+        
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-${{ github.run_number }}
+        path: build/ios/iphoneos/EvenDemoApp.ipa
+        retention-days: 30
+        
+    - name: Upload build folder
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-folder-${{ github.run_number }}
+        path: build/ios/iphoneos/
+        retention-days: 7
+
+  # Optional: Build for other platforms too
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build Android APK
+      run: flutter build apk --release
+      
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk-${{ github.run_number }}
+        path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
+        
+  build-web:
+    name: Build Web App
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build Web
+      run: flutter build web --release
+      
+    - name: Upload Web build
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-build-${{ github.run_number }}
+        path: build/web/
+        retention-days: 30

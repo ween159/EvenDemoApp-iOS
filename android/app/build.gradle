@@ -1,0 +1,67 @@
+plugins {
+  id "com.android.application"
+  id "org.jetbrains.kotlin.android"
+  id "dev.flutter.flutter-gradle-plugin"   // <— Cực kỳ quan trọng
+}
+
+android {
+  namespace "com.evenrealities.demo"
+  compileSdk 36
+
+  defaultConfig {
+    applicationId "com.evenrealities.demo"
+    minSdkVersion 24
+    targetSdkVersion 35
+    versionCode 1
+    versionName "1.0"
+    ndk {
+      abiFilters "arm64-v8a", "armeabi-v7a"
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+  kotlinOptions { jvmTarget = "17" }
+
+  externalNativeBuild {
+    cmake {
+      path "src/main/cpp/CMakeLists.txt"
+      version "3.22.1"
+    }
+  }
+  packagingOptions {
+    // Keep native libs as-is
+    pickFirst '**/*.so'
+  }
+
+  // Copy generated CMake .so outputs into jniLibs before packaging
+  tasks.register("copyCxxLibs") {
+    doLast {
+      def cxxOut = file("$buildDir/intermediates/cxx/debug/706b5439/obj")
+      def destBase = file("src/main/jniLibs")
+      if (cxxOut.exists()) {
+        cxxOut.eachDir { abiDir ->
+          def destDir = new File(destBase, abiDir.name)
+          destDir.mkdirs()
+          abiDir.eachFile { f ->
+            if (f.name.endsWith('.so')) {
+              copy {
+                from f
+                into destDir
+                include f.name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  preBuild.dependsOn(tasks.named('copyCxxLibs'))
+}
+
+dependencies {
+  // Không cần khai báo kotlin-stdlib khi dùng Kotlin Gradle Plugin 2.x
+}
