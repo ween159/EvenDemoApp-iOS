@@ -6,7 +6,7 @@ class TextPage extends StatefulWidget {
   const TextPage({super.key});
 
   @override
-  _TextPageState createState() => _TextPageState();
+  State<TextPage> createState() => _TextPageState();
 }
 
 class _TextPageState extends State<TextPage> {

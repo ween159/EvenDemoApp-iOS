@@ -1,10 +1,10 @@
-// lib/services/realtime_translate_service.dart
+﻿// lib/services/realtime_translate_service.dart
 //
-// D?ch realtime: nh?n WAV bytes -> STT -> d?ch sang Ti?ng Vi?t
-// - C� singleton: RealtimeTranslateService.I (h?p v?i UI dang g?i .I)
-// - C� factory constructor d? t?o instance c?u h�nh s?n (kh�ng redirecting c� body)
-// - API ch�nh: hasMicPermission(), start(), stop(), stream, processWavBytes(...)
-// - Ti?n �ch: transcribeOnly(), translateOnly()
+// Dịch realtime: nhận WAV bytes -> STT -> dịch sang Tiếng Việt
+// - Có singleton: RealtimeTranslateService.I (hợp với UI đang gọi .I)
+// - Có factory constructor để tạo instance cấu hình sẵn (không redirecting có body)
+// - API chính: hasMicPermission(), start(), stop(), stream, processWavBytes(...)
+// - Tiện ích: transcribeOnly(), translateOnly()
 
 import 'dart:async';
 import 'dart:io';
@@ -25,7 +25,7 @@ class RealtimeTranslateService {
   // Private constructor cho singleton
   RealtimeTranslateService._internal();
 
-  // Factory constructor (du?c ph�p c� body) d? t?o instance d� c?u h�nh
+  // Factory constructor (được phép có body) để tạo instance đã cấu hình
   factory RealtimeTranslateService({
     required String apiKey,
     String sttModel = 'whisper-1',
@@ -42,9 +42,9 @@ class RealtimeTranslateService {
     return s;
   }
 
-  // -------- C?u h�nh d?ch v? --------
+  // -------- Cấu hình dịch vụ --------
   String? _apiKey;
-  String _sttModel = 'whisper-1';       // ho?c 'gpt-4o-mini-transcribe' n?u t�i kho?n h? tr?
+  String _sttModel = 'whisper-1';       // hoặc 'gpt-4o-mini-transcribe' nếu tài khoản hỗ trợ
   String _translateModel = 'gpt-4o-mini';
   double _temperature = 0.2;
 
@@ -56,7 +56,7 @@ class RealtimeTranslateService {
 
   OpenAIService? _openai;
 
-  /// G?i h�m n�y d? c?p nh?t API key / model khi c?n (v� d? sau khi user nh?p key).
+  /// Gọi hàm này để cập nhật API key / model khi cần (ví dụ sau khi user nhập key).
   void configure({
     required String apiKey,
     String? sttModel,
@@ -70,16 +70,16 @@ class RealtimeTranslateService {
     _openai = OpenAIService(apiKey: _apiKey!);
   }
 
-  // -------- Stream s? ki?n cho UI --------
-  // Map g?m: { 'orig': b?n g?c, 'vi': b?n d?ch, 'error': l?i (n?u c�) }
+  // -------- Stream sự kiện cho UI --------
+  // Map gồm: { 'orig': bản gốc, 'vi': bản dịch, 'error': lỗi (nếu có) }
   final StreamController<Map<String, String?>> _eventCtrl =
       StreamController<Map<String, String?>>.broadcast();
 
   Stream<Map<String, String?>> get stream => _eventCtrl.stream;
 
-  // -------- Quy?n mic & v�ng d?i --------
+  // -------- Quyền mic & vòng đời --------
 
-  /// Tr? v? true d? UI kh�ng b? ch?n; n?u d�ng permission_handler/record, thay b?ng check th?t s?.
+  /// Trả về true để UI không bị chặn; nếu dùng permission_handler/record, thay bằng check thật sự.
   Future<bool> hasMicPermission() async => true;
 
   bool _running = false;
@@ -89,13 +89,13 @@ class RealtimeTranslateService {
   final AudioRecorder _recorder = AudioRecorder();
   Timer? _recordingTimer;
 
-  /// Kh?i d?ng phi�n d?ch (kh�ng t? ghi �m; b?n d?y audio v�o b?ng processWavBytes)
+  /// Khởi động phiên dịch (không tự ghi âm; bạn đẩy audio vào bằng processWavBytes)
   Future<void> start({String? sourceLang}) async {
     debugPrint('DEBUG: RealtimeTranslateService.start() called');
     debugPrint('DEBUG: API key check: ${_apiKey != null ? "present" : "null"}, isEmpty: ${_apiKey?.isEmpty ?? true}');
     if (_apiKey == null || _apiKey!.isEmpty) {
       debugPrint('DEBUG: Missing API key, adding error event');
-      _eventCtrl.add({'error': 'Thi?u OpenAI API Key trong C�i d?t.'});
+      _eventCtrl.add({'error': 'Thiếu OpenAI API Key trong Cài đặt.'});
       return;
     }
     _running = true;
@@ -113,7 +113,7 @@ class RealtimeTranslateService {
     if (audioSource == 'glasses') {
       // Ensure glasses are connected before subscribing to their speech stream
       if (!BleManager.instance.isBothConnected()) {
-        _eventCtrl.add({'error': 'K�nh chua k?t n?i. Vui l�ng k?t n?i k�nh tru?c khi b?t Realtime Translate.'});
+        _eventCtrl.add({'error': 'Kính chưa kết nối. Vui lòng kết nối kính trước khi bật Realtime Translate.'});
         return;
       }
       // subscribe to EvenAI text stream and translate incoming texts
@@ -127,7 +127,7 @@ class RealtimeTranslateService {
           _eventCtrl.add({'orig': t, 'vi': vi});
           final autoMirror = await AppSettings.getAutoMirror();
           if (autoMirror && BleManager.instance.isBothConnected()) {
-            await Proto.sendEvenAIData(vi, newScreen: (0x01 | 0x30), pos: 0, current_page_num: 1, max_page_num: 1);
+            await Proto.sendEvenAIData(vi, newScreen: (0x01 | 0x30), pos: 0, currentPageNum: 1, maxPageNum: 1);
           }
         } catch (e) {
           _eventCtrl.add({'error': e.toString()});
@@ -160,9 +160,9 @@ class RealtimeTranslateService {
     _sentenceCount = 0;
   }
 
-  // -------- T�c v? ch�nh: nh?n WAV bytes -> STT -> d?ch -> ph�t s? ki?n --------
+  // -------- Tác vụ chính: nhận WAV bytes -> STT -> dịch -> phát sự kiện --------
 
-  /// Nh?n m?t kh�c WAV bytes, STT -> d?ch -> ph�t ra stream {orig, vi}
+  /// Nhận một khúc WAV bytes, STT -> dịch -> phát ra stream {orig, vi}
   Future<void> processWavBytes(
     List<int> wavBytes, {
     String? languageCode,
@@ -174,7 +174,7 @@ class RealtimeTranslateService {
     }
     if (_openai == null) {
       debugPrint('DEBUG: processWavBytes failed, no OpenAI service');
-      _eventCtrl.add({'error': 'D?ch v? chua du?c c?u h�nh API key.'});
+      _eventCtrl.add({'error': 'Dịch vụ chưa được cấu hình API key.'});
       return;
     }
 
@@ -196,7 +196,7 @@ class RealtimeTranslateService {
       if (textOriginal.isEmpty) return;
 
       debugPrint('DEBUG: Calling OpenAI translate...');
-      // 2) D?ch -> Ti?ng Vi?t
+      // 2) Dịch -> Tiếng Việt
       final vi = await _openai!.translateToVietnamese(
         textOriginal,
         model: _translateModel,
@@ -204,11 +204,11 @@ class RealtimeTranslateService {
       );
       debugPrint('DEBUG: Translation result: $vi');
 
-      // 3) Ph�t s? ki?n cho UI
+      // 3) Phát sự kiện cho UI
       _eventCtrl.add({'orig': textOriginal, 'vi': vi});
       debugPrint('DEBUG: Event sent to UI');
       
-      // 4) T? d?ng g?i b?n d?ch l�n k�nh n?u du?c b?t
+      // 4) Tự động gửi bản dịch lên kính nếu được bật
       final autoMirror = await AppSettings.getAutoMirror();
       if (autoMirror && BleManager.instance.isBothConnected()) {
         await _updateGlassesDisplay(textOriginal, vi);
@@ -222,13 +222,13 @@ class RealtimeTranslateService {
   // ---- Phone recorder loop ----
   // Phone recording intentionally not implemented in this iteration.
 
-  /// Ch? STT (n?u c?n hi?n th? b?n g?c song song)
+  /// Chỉ STT (nếu cần hiển thị bản gốc song song)
   Future<String> transcribeOnly(
     List<int> wavBytes, {
     String? languageCode,
   }) async {
     if (_openai == null) {
-      throw StateError('OpenAIService chua du?c c?u h�nh. H�y g?i configure(apiKey: ...) tru?c.');
+      throw StateError('OpenAIService chưa được cấu hình. Hãy gọi configure(apiKey: ...) trước.');
     }
     return _openai!.transcribeWavBytes(
       wavBytes,
@@ -237,10 +237,10 @@ class RealtimeTranslateService {
     );
   }
 
-  /// Ch? d?ch do?n text sang Ti?ng Vi?t
+  /// Chỉ dịch đoạn text sang Tiếng Việt
   Future<String> translateOnly(String text) async {
     if (_openai == null) {
-      throw StateError('OpenAIService chua du?c c?u h�nh. H�y g?i configure(apiKey: ...) tru?c.');
+      throw StateError('OpenAIService chưa được cấu hình. Hãy gọi configure(apiKey: ...) trước.');
     }
     return _openai!.translateToVietnamese(
       text,
@@ -258,7 +258,7 @@ class RealtimeTranslateService {
     debugPrint('DEBUG: Mic permission: $hasPermission');
     
     if (!hasPermission) {
-      _eventCtrl.add({'error': 'Kh�ng c� quy?n truy c?p micro.'});
+      _eventCtrl.add({'error': 'Không có quyền truy cập micro.'});
       return;
     }
     
@@ -324,7 +324,7 @@ class RealtimeTranslateService {
         
       } catch (e) {
         debugPrint('DEBUG: Recording error: $e');
-        _eventCtrl.add({'error': 'L?i recording: $e'});
+        _eventCtrl.add({'error': 'Lỗi recording: $e'});
         timer.cancel();
       }
     });
@@ -338,43 +338,43 @@ class RealtimeTranslateService {
     // Map Vietnamese characters with diacritics to Vietnamese without diacritics
     final Map<String, String> vietnameseMap = {
       // A family - keep Vietnamese but remove diacritics
-      '�': 'a', '�': 'a', '?': 'a', '�': 'a', '?': 'a',
-      'a': 'a', '?': 'a', '?': 'a', '?': 'a', '?': 'a', '?': 'a',
-      '�': 'a', '?': 'a', '?': 'a', '?': 'a', '?': 'a', '?': 'a',
-      '�': 'A', '�': 'A', '?': 'A', '�': 'A', '?': 'A',
-      'A': 'A', '?': 'A', '?': 'A', '?': 'A', '?': 'A', '?': 'A',
-      '�': 'A', '?': 'A', '?': 'A', '?': 'A', '?': 'A', '?': 'A',
+      'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+      'À': 'A', 'Á': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+      'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+      'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
       
       // E family
-      '�': 'e', '�': 'e', '?': 'e', '?': 'e', '?': 'e',
-      '�': 'e', '?': 'e', '?': 'e', '?': 'e', '?': 'e', '?': 'e',
-      '�': 'E', '�': 'E', '?': 'E', '?': 'E', '?': 'E',
-      '�': 'E', '?': 'E', '?': 'E', '?': 'E', '?': 'E', '?': 'E',
+      'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+      'È': 'E', 'É': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+      'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
       
       // I family
-      '�': 'i', '�': 'i', '?': 'i', 'i': 'i', '?': 'i',
-      '�': 'I', '�': 'I', '?': 'I', 'I': 'I', '?': 'I',
+      'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+      'Ì': 'I', 'Í': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
       
       // O family
-      '�': 'o', '�': 'o', '?': 'o', '�': 'o', '?': 'o',
-      '�': 'o', '?': 'o', '?': 'o', '?': 'o', '?': 'o', '?': 'o',
-      'o': 'o', '?': 'o', '?': 'o', '?': 'o', '?': 'o', '?': 'o',
-      '�': 'O', '�': 'O', '?': 'O', '�': 'O', '?': 'O',
-      '�': 'O', '?': 'O', '?': 'O', '?': 'O', '?': 'O', '?': 'O',
-      'O': 'O', '?': 'O', '?': 'O', '?': 'O', '?': 'O', '?': 'O',
+      'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+      'Ò': 'O', 'Ó': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+      'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+      'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
       
       // U family  
-      '�': 'u', '�': 'u', '?': 'u', 'u': 'u', '?': 'u',
-      'u': 'u', '?': 'u', '?': 'u', '?': 'u', '?': 'u', '?': 'u',
-      '�': 'U', '�': 'U', '?': 'U', 'U': 'U', '?': 'U',
-      'U': 'U', '?': 'U', '?': 'U', '?': 'U', '?': 'U', '?': 'U',
+      'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+      'Ù': 'U', 'Ú': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+      'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
       
       // Y family
-      '?': 'y', '�': 'y', '?': 'y', '?': 'y', '?': 'y',
-      '?': 'Y', '�': 'Y', '?': 'Y', '?': 'Y', '?': 'Y',
+      'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+      'Ỳ': 'Y', 'Ý': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
       
-      // D family - keep d as special case, critical for Vietnamese
-      'd': 'd', '�': 'D',
+      // D family - keep đ as special case, critical for Vietnamese
+      'đ': 'd', 'Đ': 'D',
     };
     
     String result = text;
@@ -400,15 +400,15 @@ class RealtimeTranslateService {
 
       // Create bilingual display with proper formatting for TextService
       // Format similar to TextService: clear separation and good readability
-      final bilinguaText = "???? $englishText\n\n???? $vietnameseNoDiacritics";
+      final bilinguaText = "🇺🇸 $englishText\n\n🇻🇳 $vietnameseNoDiacritics";
       
       // Use TextService approach: send directly with 0x70 mode for scrollable display
       await Proto.sendEvenAIData(
         bilinguaText,
         newScreen: (0x01 | 0x70), // TextService mode for scrollable display
         pos: 0,
-        current_page_num: 1, 
-        max_page_num: 1,
+        currentPageNum: 1, 
+        maxPageNum: 1,
       );
       
       debugPrint('DEBUG: Bilingual text sent using TextService mode (scrollable)');
@@ -424,8 +424,8 @@ class RealtimeTranslateService {
           vietnameseOnly,
           newScreen: (0x01 | 0x70), // TextService mode
           pos: 0,
-          current_page_num: 1,
-          max_page_num: 1,
+          currentPageNum: 1,
+          maxPageNum: 1,
         );
         
         debugPrint('DEBUG: Fallback Vietnamese-only display completed');
@@ -466,7 +466,7 @@ class RealtimeTranslateService {
         debugPrint('DEBUG: Error sending bilingual text to glasses: $e');
         // Fallback to Vietnamese-only display using TextService mode for scrollability
         final glassesText = _convertVietnameseNoDiacritics(vietnamese);
-        await Proto.sendEvenAIData(glassesText, newScreen: (0x01 | 0x70), pos: 0, current_page_num: 1, max_page_num: 1);
+        await Proto.sendEvenAIData(glassesText, newScreen: (0x01 | 0x70), pos: 0, currentPageNum: 1, maxPageNum: 1);
       }
     } else {
       debugPrint('DEBUG: Accumulating sentence $_sentenceCount/$_sentencesPerParagraph');
@@ -510,7 +510,7 @@ class RealtimeTranslateService {
     return hasAudio;
   }
 
-  // -------- D?n d?p --------
+  // -------- Dọn dẹp --------
   void dispose() {
     _eventCtrl.close();
   }

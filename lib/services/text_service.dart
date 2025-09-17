@@ -68,8 +68,8 @@ debugPrint('${DateTime.now()} doSendText--currentPage---${getCurrentPage()}-----
     bool isSuccess = await Proto.sendEvenAIData(text,
         newScreen: EvenAIDataMethod.transferToNewScreen(type, status),
         pos: pos,
-        current_page_num: getCurrentPage(),
-        max_page_num: getTotalPages()); // todo pos
+        currentPageNum: getCurrentPage(),
+        maxPageNum: getTotalPages()); // todo pos
     if (!isSuccess) {
       if (retryCount < maxRetry) {
         retryCount++;
