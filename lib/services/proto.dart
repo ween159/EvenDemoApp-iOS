@@ -34,8 +34,8 @@ debugPrint("Proto---micOn---startMic---$startMic-------");
       {int? timeoutMs,
       required int newScreen,
       required int pos,
-      required int current_page_num,
-      required int max_page_num}) async {
+      required int currentPageNum,
+      required int maxPageNum}) async {
     var data = utf8.encode(text);
     var syncSeq = _evenaiSeq & 0xff;
 
@@ -44,11 +44,11 @@ debugPrint("Proto---micOn---startMic---$startMic-------");
         syncSeq: syncSeq,
         newScreen: newScreen,
         pos: pos,
-        current_page_num: current_page_num,
-        max_page_num: max_page_num);
+        currentPageNum: currentPageNum,
+        maxPageNum: maxPageNum);
     _evenaiSeq++;
 debugPrint(
-        '${DateTime.now()} proto--sendEvenAIData---text---$text---_evenaiSeq----$_evenaiSeq---newScreen---$newScreen---pos---$pos---current_page_num--$current_page_num---max_page_num--$max_page_num--dataList----$dataList---');
+        '${DateTime.now()} proto--sendEvenAIData---text---$text---_evenaiSeq----$_evenaiSeq---newScreen---$newScreen---pos---$pos---currentPageNum--$currentPageNum---maxPageNum--$maxPageNum--dataList----$dataList---');
 
     bool isSuccess = await BleManager.instance.requestList(dataList,
         lr: "L", timeoutMs: timeoutMs ?? 2000);

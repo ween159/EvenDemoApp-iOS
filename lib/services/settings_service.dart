@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppSettings {
   static const _apiKeyKey = 'openai_api_key';
   static const _audioSourceKey = 'audio_source'; // 'auto' | 'phone' | 'glasses'
-  static const _streamingModeKey = 'streaming_mode'; // reserved
+  // static const _streamingModeKey = 'streaming_mode'; // reserved - unused
   static const _autoMirrorKey = 'auto_mirror_glasses'; // bool
   static const _targetLangKey = 'target_lang'; // e.g., 'vi'
 

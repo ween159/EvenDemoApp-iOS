@@ -7,7 +7,7 @@ class EvenAIListPage extends StatefulWidget {
   const EvenAIListPage({super.key});
 
   @override
-  _EvenAIListPageState createState() => _EvenAIListPageState();
+  State<EvenAIListPage> createState() => _EvenAIListPageState();
 }
 
 class _EvenAIListPageState extends State<EvenAIListPage> {

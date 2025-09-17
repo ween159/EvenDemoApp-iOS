@@ -37,13 +37,7 @@ class _HomePageState extends State<HomePage> {
     _refreshPage();
   }
 
-  Future<void> _stopScan() async {
-    try {
-      await BleManager.instance.stopScan();
-    } catch (e) {
-      // Ignore errors
-    }
-  }
+  // Removed unused _stopScan method
 
   Widget blePairedList() => Expanded(
         child: ListView.separated(

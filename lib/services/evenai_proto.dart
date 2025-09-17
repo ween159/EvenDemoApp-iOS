@@ -9,8 +9,8 @@ class EvenaiProto {
     required int syncSeq,
     required int newScreen,
     required int pos,
-    required int current_page_num,
-    required int max_page_num,
+    required int currentPageNum,
+    required int maxPageNum,
   }) {
     
     List<Uint8List> send = [];
@@ -35,8 +35,8 @@ class EvenaiProto {
         seq,
         newScreen,
         ...byteData.buffer.asUint8List(),
-        current_page_num,
-        max_page_num
+        currentPageNum,
+        maxPageNum
       ], itemData);
       send.add(pack);
     }
